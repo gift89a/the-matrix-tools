@@ -1,0 +1,730 @@
+/* HACKTOOLS - Main Stylesheet */
+/* Based on the clean hacker style provided by user */
+
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Courier New', Consolas, monospace;
+    background: #000;
+    color: #00ff41;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    line-height: 1.7; /* 基础行高 */
+    overflow-x: hidden;
+}
+
+/* Header Styles */
+header {
+    background: #001100;
+    border-bottom: 2px solid #00ff41;
+    text-align: center;
+    padding: 1.8rem 1rem;
+}
+
+h1 {
+    font-size: 3.1rem;
+    letter-spacing: 6px;
+    text-shadow: 0 0 12px #00ff41;
+    font-weight: bold;
+}
+
+.subtitle {
+    margin-top: 0.4rem;
+    opacity: 0.75;
+    font-size: 1rem;
+}
+
+/* Navigation Styles */
+nav {
+    background: #000;
+    border-bottom: 1px solid #003300;
+    padding: 0;
+    text-align: center;
+}
+
+.nav-menu {
+    display: inline-flex;
+    gap: 2px;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 0.7rem 0;
+    position: relative;
+}
+
+/* Category Navigation with Dropdown */
+.nav-category-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.nav-category {
+    padding: 0.8rem 1.5rem;
+    background: #001100;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 0.95rem;
+    color: #00ff41;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border: none;
+    font-family: inherit;
+    border-bottom: 3px solid transparent;
+}
+
+.nav-category:hover,
+.nav-category.active {
+    background: #00ff41;
+    color: #000;
+    border-bottom: 3px solid #000;
+}
+
+/* Dropdown Content (Hidden by Default) */
+.dropdown-content {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: #001100;
+    min-width: 200px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    border: 1px solid #003300;
+    border-top: none;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+/* Show the dropdown menu on hover */
+.nav-category-dropdown:hover .dropdown-content {
+    display: block;
+}
+
+/* Dropdown Links */
+.dropdown-link {
+    display: block;
+    padding: 0.8rem 1rem;
+    background: #001100;
+    cursor: pointer;
+    font-weight: normal;
+    font-size: 0.9rem;
+    color: #00cc00;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border: none;
+    font-family: inherit;
+    text-align: left;
+    width: 100%;
+    border-bottom: 1px solid #002200;
+}
+
+.dropdown-link:hover,
+.dropdown-link.active {
+    background: #00ff41;
+    color: #000;
+}
+
+.dropdown-link:last-child {
+    border-bottom: none;
+}
+
+/* Dropdown Header */
+.dropdown-header {
+    padding: 0.8rem 1rem;
+    background: #000800;
+    color: #00ff41;
+    font-weight: bold;
+    font-size: 0.9rem;
+    border-bottom: 1px solid #003300;
+}
+
+/* Dropdown Footer */
+.dropdown-footer {
+    padding: 0.6rem 1rem;
+    background: #000800;
+    color: #00aa33;
+    font-size: 0.8rem;
+    border-top: 1px solid #003300;
+    text-align: center;
+}
+
+/* Main Layout */
+.main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 120px 1fr 120px; /* Left and right ad areas fixed 120px */
+    max-width: 100%;
+}
+
+/* Ad Areas */
+.ads-left,
+.ads-right {
+    background: #000;
+    border-left: 8px solid #001100;
+    border-right: 8px solid #001100;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    font-size: 0.9rem;
+    color: #004400;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.6;
+    user-select: none;
+}
+
+.ads-right {
+    transform: rotate(180deg);
+}
+
+/* Workspace */
+.workspace {
+    padding: 1.5rem 2rem;
+    display: grid;
+    grid-template-columns: 1fr 110px 1fr;
+    align-items: center;
+    gap: 2rem;
+}
+
+/* ---- PANEL LAYOUT FIX ---- */
+/* 核心容器：确保它是垂直 Flex 容器 */
+.panel {
+    height: 78vh;
+    min-height: 520px;
+    display: flex;
+    flex-direction: column; /* CRITICAL: 确保子元素垂直排列 */
+}
+
+/* Textarea Styles */
+textarea {
+    width: 100%;
+    height: 100%;
+    padding: 2rem;
+    background: #000;
+    color: #00ff41;
+    border: 1px solid #003300;
+    font-family: inherit;
+    /* 主输入/输出数据文本的字体大小 */
+    font-size: 1.18rem; 
+    /* 强制统一行高，解决视觉差异 */
+    line-height: 1.5 !important; 
+    resize: none;
+    outline: none;
+    flex: 1; /* 占据剩余空间 */
+}
+
+textarea:focus {
+    border-color: #00ff41;
+    box-shadow: 0 0 25px rgba(0, 255, 65, 0.25);
+}
+
+textarea::placeholder {
+    color: #003300;
+}
+
+/* Middle Section with Run Button */
+.mid {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 1.8rem;
+    user-select: none;
+}
+
+.run {
+    color: #00ff41;
+    font-size: 2.8rem;
+    font-weight: bold;
+    opacity: 0.65;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    background: none;
+    border: none;
+    font-family: inherit;
+    padding: 0;
+}
+
+.run:hover {
+    opacity: 1;
+}
+
+.run-label {
+    font-size: 0.8rem;
+    opacity: 0.5;
+    letter-spacing: 3px;
+}
+
+/* Tool Info Panel */
+.tool-info {
+    margin-top: 1rem;
+    padding: 1.5rem;
+    background: #001100;
+    border: 1px solid #003300;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    opacity: 0.9;
+    flex: 1; /* Match height with left panel */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow: hidden; /* Prevent content from overflowing */
+    min-height: 0; /* Allow flex item to shrink */
+}
+
+.tool-info h3 {
+    color: #00ff41;
+    margin-bottom: 0.8rem;
+    font-size: 1.1rem;
+    font-weight: bold;
+}
+
+.tool-info p {
+    margin-bottom: 0.5rem;
+    line-height: 1.5;
+}
+
+.tool-info .text-muted {
+    opacity: 0.7;
+    font-size: 0.85rem;
+}
+
+.tool-info ul {
+    padding-left: 1.5rem;
+}
+
+.tool-info li {
+    margin-bottom: 0.3rem;
+}
+
+/* Notification Styles */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 1rem 1.5rem;
+    background: #001100;
+    border: 1px solid #00ff41;
+    color: #00ff41;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    z-index: 1000;
+    animation: slideIn 0.3s ease;
+    box-shadow: 0 0 20px rgba(0, 255, 65, 0.2);
+    max-width: 400px;
+}
+
+/* Panel Headers */
+.panel-header {
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #003300;
+}
+
+.panel-title {
+    font-size: 1.2rem;
+    color: #00ff41;
+    font-weight: bold;
+}
+
+.panel-subtitle {
+    font-size: 0.9rem;
+    color: #00aa33;
+    opacity: 0.8;
+}
+
+/* Animations */
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 0.65;
+    }
+    50% {
+        opacity: 1;
+    }
+}
+
+.run.pulsing {
+    animation: pulse 1.5s infinite;
+}
+
+/* Responsive Design */
+@media (max-width: 1100px) {
+    .main {
+        grid-template-columns: 1fr; /* Hide ad areas on small screens */
+    }
+    
+    .ads-left,
+    .ads-right {
+        display: none;
+    }
+    
+    .workspace {
+        grid-template-columns: 1fr 100px 1fr;
+        padding: 1.5rem;
+    }
+}
+
+@media (max-width: 900px) {
+    .workspace {
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr 90px 1fr;
+        gap: 1rem;
+    }
+    
+    .run {
+        transform: rotate(90deg);
+    }
+    
+    .run-label {
+        display: none;
+    }
+    
+    h1 {
+        font-size: 2.5rem;
+        letter-spacing: 4px;
+    }
+    
+    .panel {
+        min-height: 400px;
+    }
+}
+
+@media (max-width: 600px) {
+    .workspace {
+        padding: 1rem;
+    }
+    
+    textarea {
+        padding: 1.5rem;
+        font-size: 1rem; /* Adjusting for small screen */
+    }
+    
+    h1 {
+        font-size: 2rem;
+        letter-spacing: 2px;
+    }
+    
+    .nav-link {
+        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+    }
+}
+
+/* Hacker Footer */
+.hacker-footer {
+    background: #001100;
+    border-top: 1px solid #003300; /* Lighter border */
+    padding: 1.5rem 0;
+    margin-top: auto;
+    text-align: center;
+}
+
+.hacker-footer .container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.hacker-footer p {
+    color: #00cc00;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.hacker-footer .footer-links {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+}
+
+.hacker-footer .footer-links a {
+    color: #00ff41;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: color 0.3s ease;
+    padding: 0.2rem 0.4rem;
+}
+
+.hacker-footer .footer-links a:hover {
+    color: #00cc00;
+    text-decoration: underline;
+}
+
+/* Separator between copyright and links */
+.hacker-footer .separator {
+    color: #003300;
+    font-size: 0.9rem;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* Utility Classes */
+.hidden {
+    display: none !important;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.text-muted {
+    opacity: 0.6;
+}
+
+.mt-1 { margin-top: 0.5rem; }
+.mt-2 { margin-top: 1rem; }
+.mt-3 { margin-top: 1.5rem; }
+.mb-1 { margin-bottom: 0.5rem; }
+.mb-2 { margin-bottom: 1rem; }
+.mb-3 { margin-bottom: 1.5rem; }
+
+
+/* 原有样式保留 */
+#qr-canvas {
+    max-width: 100%;
+    border: 8px solid #001a00;
+    border-radius: 8px;
+    box-shadow: 0 0 20px rgba(0,255,0,0.3);
+    display: block;
+    margin: 1rem auto;
+}
+
+.color-preview {
+    width: 100%;
+    height: 120px;
+    border-radius: 8px;
+    border: 2px solid #00ff00;
+    margin: 1rem 0;
+    box-shadow: 0 0 15px rgba(0,255,0,0.3);
+}
+
+.extra-output {
+    background: #001a00;
+    border: 1px solid #003300;
+    padding: 1rem;
+    border-radius: 4px;
+    margin-top: 1rem;
+    font-family: 'Courier New', monospace;
+    white-space: pre-wrap;
+}
+
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 1rem 2rem;
+    background: #001a00;
+    color: #00ff00;
+    border: 1px solid #00ff00;
+    border-radius: 4px;
+    z-index: 9999;
+    animation: slideIn 0.4s ease;
+    box-shadow: 0 0 20px rgba(0,255,0,0.4);
+}
+
+.notification.error { background: #330000; border-color: #ff0066; color: #ff0066; }
+.notification.success { background: #003300; border-color: #00ff00; }
+
+@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+.nav-item:hover .dropdown-menu {
+    display: block !important;
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+/* ---- DYNAMIC INPUT CONTAINER CRITICAL FIX ---- */
+
+#dynamic-input-container,
+.dynamic-container {
+    flex: 1; 
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    
+    /* 💥 布局核心修复 (A): 允许内容滚动 */
+    min-height: 0; 
+    overflow-y: auto; 
+    
+    /* 💥 布局核心修复 (B): 模仿 Textarea 的外观 */
+    width: 100%; 
+    height: 100%; 
+    padding: 2rem; 
+    background: #000; 
+    color: #00ff41; 
+    border: 1px solid #003300; 
+    font-family: inherit;
+    font-size: 1.18rem; 
+    
+    /* 💥 布局核心修复 (C): 抵消 .panel-header 的 margin-bottom: 1rem */
+    margin-top: -1rem; 
+}
+
+/* ---------------------------------------------------------------------- */
+/* 💥 核心修复区域：强制统一 输入/输出/工具输入 的字体大小和行高 */
+/* ---------------------------------------------------------------------- */
+
+/* 1. 强制统一 Dynamic Tool Inputs (.hack-input) */
+.hack-input, .hack-select {
+    background: #000;
+    color: #00ff41;
+    border: 1px solid #003300;
+    padding: 0.8rem;
+    font-family: 'Courier New', monospace;
+    /* 强制与主输入/输出区保持一致 */
+    font-size: 1.18rem !important; 
+    /* 强制统一行高 */
+    line-height: 1.5 !important; 
+    outline: none;
+    width: 100%;
+    transition: border 0.2s;
+}
+
+/* 2. 强制 Rich Output Area 字体大小一致 */
+.rich-output {
+    flex: 1;
+    background: #000500;
+    border: 1px solid #003300;
+    padding: 1rem;
+    overflow-y: auto;
+    font-family: 'Courier New', monospace;
+    white-space: pre-wrap;
+    color: #00ff41;
+    /* 强制与主输入/输出区保持一致 */
+    font-size: 1.18rem !important; 
+    /* 强制统一行高 */
+    line-height: 1.5 !important; 
+}
+
+/* 3. 确保主输入/输出区域没有被其他规则覆盖 (冗余但安全) */
+#input, #output {
+    font-size: 1.18rem !important;
+    line-height: 1.5 !important; 
+}
+
+/* ---------------------------------------------------------------------- */
+/* 其他元素样式 (保留标题、标签等原有样式) */
+/* ---------------------------------------------------------------------- */
+
+.hack-input-group {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+}
+
+.hack-label {
+    color: #00aa33;
+    font-size: 0.85rem; /* 保持较小字体用于标签/说明 */
+    margin-bottom: 0.3rem;
+    display: block;
+}
+
+/* Diff Tool Specific Styles */
+.diff-line {
+    display: flex;
+    border-bottom: 1px solid #001100;
+    line-height: 1.3;
+}
+.diff-num {
+    width: 30px;
+    color: #004400;
+    user-select: none;
+    text-align: right;
+    padding-right: 8px;
+    font-size: 0.8rem;
+}
+.diff-content {
+    flex: 1;
+    padding-left: 8px;
+    word-break: break-all;
+}
+.diff-added {
+    background: rgba(0, 255, 65, 0.15); 
+    color: #ccffcc;
+}
+.diff-removed {
+    background: rgba(255, 0, 0, 0.15); 
+    color: #ffcccc;
+    text-decoration: line-through; 
+}
+.diff-equal {
+    color: #008822;
+}
+
+/* Date Picker Correction */
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) sepia(1) saturate(5) hue-rotate(90deg);
+    cursor: pointer;
+}
+
+/* Bidirectional controls styling */
+#bidirectional-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px; 
+}
+
+/* Reusing 'run' styles for Encode/Decode buttons for consistency */
+#bidirectional-controls .run {
+    height: 40px;
+    width: 100px;
+    padding: 0;
+    margin: 5px 0;
+    font-size: 1rem;
+    font-weight: bold;
+}
+
+#bidirectional-controls .primary {
+    background-color: #00ff41;
+    color: #000;
+}
+
+#bidirectional-controls .secondary {
+    background-color: #003300;
+    color: #00aa33;
+    border: 1px solid #00aa33;
+}
+
+/* Ensure the run label fits below the new buttons */
+#bidirectional-controls .run-label {
+    margin-top: -5px;
+    margin-bottom: 10px;
+    font-size: 0.75rem;
+    color: #00aa33;
+}

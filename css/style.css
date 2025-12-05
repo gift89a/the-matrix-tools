@@ -1,0 +1,584 @@
+/* HACKTOOLS - Main Stylesheet (Optimized Global Font System v2.0) */
+
+/* 1. Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Courier New', Consolas, monospace;
+    background: #000;
+    color: #00ff41;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    line-height: 1.6; /* 统一行高，增加可读性 */
+    overflow-x: hidden;
+}
+
+/* 2. Header Styles */
+header {
+    background: #001100;
+    border-bottom: 2px solid #00ff41;
+    text-align: center;
+    padding: 1.5rem 1rem;
+}
+
+h1 {
+    font-size: 2.8rem;
+    letter-spacing: 6px;
+    text-shadow: 0 0 12px #00ff41;
+    font-weight: bold;
+    margin-bottom: 0.2rem;
+}
+
+.subtitle {
+    opacity: 0.75;
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+}
+
+/* 3. Navigation Styles */
+nav {
+    background: #000;
+    border-bottom: 1px solid #003300;
+    padding: 0;
+    text-align: center;
+}
+
+.nav-menu {
+    display: inline-flex;
+    gap: 2px;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 0.7rem 0;
+    position: relative;
+}
+
+.nav-category-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.nav-category {
+    padding: 0.6rem 1.2rem;
+    background: #001100;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 0.9rem;
+    color: #00ff41;
+    transition: all 0.2s ease;
+    border: none;
+    font-family: inherit;
+    border-bottom: 3px solid transparent;
+}
+
+.nav-category:hover,
+.nav-category.active {
+    background: #00ff41;
+    color: #000;
+    border-bottom: 3px solid #000;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: #001100;
+    min-width: 220px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    border: 1px solid #003300;
+    border-top: none;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.nav-category-dropdown:hover .dropdown-content {
+    display: block;
+}
+
+.dropdown-link {
+    display: block;
+    padding: 0.8rem 1rem;
+    background: #001100;
+    cursor: pointer;
+    font-weight: normal;
+    font-size: 0.85rem;
+    color: #00cc00;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border: none;
+    font-family: inherit;
+    text-align: left;
+    width: 100%;
+    border-bottom: 1px solid #002200;
+}
+
+.dropdown-link:hover,
+.dropdown-link.active {
+    background: #00ff41;
+    color: #000;
+}
+
+/* 4. Main Layout */
+.main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 100px 1fr 100px;
+    max-width: 100%;
+}
+
+.ads-left,
+.ads-right {
+    background: #000;
+    border-left: 1px solid #001100;
+    border-right: 1px solid #001100;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    font-size: 0.8rem;
+    color: #003300;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+}
+
+.ads-right {
+    transform: rotate(180deg);
+}
+
+.workspace {
+    padding: 1.5rem 2rem;
+    display: grid;
+    grid-template-columns: 1fr 100px 1fr;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+/* 5. Panel Layout (Input/Output Containers) */
+.panel {
+    /* 解决问题 1：Diff 区域太高，降低整体面板高度 */
+    height: 78vh; 
+    min-height: 450px; /* 最小高度也降低 */
+    display: flex;
+    flex-direction: column;
+}
+
+.panel-header {
+    margin-bottom: 0.8rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #003300;
+}
+
+.panel-title {
+    font-size: 1.1rem;
+    color: #00ff41;
+    font-weight: bold;
+}
+
+.panel-subtitle {
+    font-size: 0.8rem;
+    color: #00aa33;
+    opacity: 0.8;
+    margin-top: 2px;
+}
+
+/* 6. 统一所有输入输出区域 */
+textarea, 
+#dynamic-input-container,
+.rich-output {
+    width: 100%;
+    height: 100%;
+    
+    /* 解决问题 1 辅助：稍微减小内边距，争取更多垂直空间 */
+    padding: 1rem; 
+    
+    background: #000;
+    color: #00ff41;
+    border: 1px solid #003300;
+    font-family: 'Courier New', Consolas, monospace;
+    font-size: 0.95rem; 
+    line-height: 1.6;
+    resize: none;
+    outline: none;
+    flex: 1; 
+}
+
+textarea:focus,
+.hack-input:focus,
+.hack-select:focus {
+    border-color: #00ff41;
+    box-shadow: 0 0 15px rgba(0, 255, 65, 0.15);
+}
+
+textarea::placeholder {
+    color: #004400;
+    opacity: 0.6;
+}
+
+/* 7. Dynamic Input Container & Hack Inputs */
+#dynamic-input-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    overflow-y: auto;
+}
+
+.hack-input, 
+.hack-select {
+    background: #000;
+    color: #00ff41;
+    border: 1px solid #003300;
+    padding: 0.6rem 0.8rem;
+    font-family: inherit;
+    font-size: 0.95rem; 
+    outline: none;
+    width: 100%;
+    transition: border 0.2s, box-shadow 0.2s;
+    border-radius: 2px;
+}
+
+/* 解决问题 3：Unix Timestamp 日期选择按钮被覆盖 */
+/* 强制日期输入框背景为透明，且减少垂直内边距 */
+input[type="date"], input[type="time"], input[type="datetime-local"] {
+    background: transparent !important; /* 防止黑色背景遮挡原生日历图标 */
+    padding: 0.4rem 0.8rem !important; /* 减少垂直内边距 */
+}
+
+
+/* 8. Hack Labels & Control Labels (复选框文字) */
+.hack-label {
+    color: #00aa33;
+    font-size: 0.8rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.4rem;
+    display: block;
+}
+
+.hack-input-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.hack-input-group label {
+    display: flex;
+    align-items: center;
+    color: #00dd33;
+    font-size: 0.9rem;
+    margin-bottom: 0.4rem;
+    cursor: pointer;
+    user-select: none;
+}
+
+.hack-input-group label input[type="checkbox"],
+.hack-input-group label input[type="radio"] {
+    margin-right: 10px;
+    cursor: pointer;
+    accent-color: #00ff41;
+}
+
+/* 9. Middle Control Section (不变) */
+.mid {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 1.5rem;
+    user-select: none;
+}
+
+.run {
+    color: #00ff41;
+    font-size: 2.5rem;
+    font-weight: bold;
+    opacity: 0.8;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: none;
+    border: none;
+    font-family: inherit;
+    padding: 0.5rem;
+    text-shadow: 0 0 5px rgba(0, 255, 65, 0.3);
+}
+
+.run:hover {
+    opacity: 1;
+    transform: scale(1.1);
+    text-shadow: 0 0 15px rgba(0, 255, 65, 0.6);
+}
+
+.run:active {
+    transform: scale(0.95);
+}
+
+.run-label {
+    font-size: 0.75rem;
+    opacity: 0.6;
+    letter-spacing: 2px;
+    color: #00ff41;
+}
+
+/* Bidirectional Buttons (不变) */
+#bidirectional-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+#bidirectional-controls .run {
+    height: 36px;
+    width: 100px;
+    padding: 0;
+    margin: 0;
+    font-size: 0.9rem; 
+    font-weight: bold;
+    border-radius: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-shadow: none;
+}
+
+#bidirectional-controls .primary {
+    background-color: #00ff41;
+    color: #000;
+}
+
+#bidirectional-controls .secondary {
+    background-color: #002200;
+    color: #00aa33;
+    border: 1px solid #005500;
+}
+
+#bidirectional-controls .secondary:hover {
+    border-color: #00ff41;
+    color: #00ff41;
+}
+
+#bidirectional-controls .run.active {
+    background-color: #00ff41;
+    color: #000;
+    border-color: #00ff41;
+    box-shadow: 0 0 10px rgba(0, 255, 65, 0.4);
+}
+
+/* 10. Tool Info Panel & Action Buttons */
+
+.tool-info {
+    margin-top: 1rem;
+    padding: 1rem 1.2rem;
+    background: #001100;
+    border: 1px solid #003300;
+    
+    /* 解决问题 2：Result 边线太粗，改为 1px 细线 */
+    border-left: 1px solid #00ff41; 
+    
+    font-size: 0.85rem;
+    opacity: 0.9;
+    flex: 0 0 auto; 
+}
+
+.tool-info h3 {
+    color: #00ff41;
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+    font-weight: bold;
+}
+
+.action-buttons {
+    margin-top: 1rem;
+    display: flex;
+    gap: 0.8rem;
+    justify-content: flex-end;
+}
+
+/* 解决问题 4：Action 按钮，采用非 Hack 风格点缀，使其更显眼 */
+.action-btn {
+    /* 更突出的风格 */
+    background: #003300; 
+    border: 1px solid #007700;
+    color: #00ff41;
+    
+    padding: 0.4rem 0.8rem;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.85rem; /* 稍微放大一点 */
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-radius: 2px;
+}
+
+.action-btn:hover {
+    border-color: #00ff41;
+    background: #005500;
+    box-shadow: 0 0 8px rgba(0, 255, 65, 0.2);
+}
+
+/* 11. Rich Output Specifics (Diff, etc.) */
+.rich-output {
+    overflow-y: auto;
+    white-space: pre-wrap;
+}
+
+.diff-line {
+    display: flex;
+    border-bottom: 1px solid #001100;
+    line-height: 1.5;
+}
+.diff-num {
+    width: 35px;
+    color: #004400;
+    user-select: none;
+    text-align: right;
+    padding-right: 10px;
+    border-right: 1px solid #002200;
+    font-size: 0.8rem;
+}
+.diff-content {
+    flex: 1;
+    padding-left: 10px;
+    word-break: break-all;
+}
+.diff-added { background: rgba(0, 255, 65, 0.15); color: #ccffcc; }
+.diff-removed { background: rgba(255, 0, 0, 0.15); color: #ffcccc; text-decoration: line-through; }
+.diff-equal { color: #008822; }
+
+/* 12. Helpers & Utilities */
+.hidden { display: none !important; }
+#qr-canvas { margin-top: 1rem; border: 5px solid white; display: none; }
+
+/* Notification (不变) */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 0.8rem 1.5rem;
+    background: #001a00;
+    color: #00ff00;
+    border: 1px solid #00ff00;
+    box-shadow: 0 0 20px rgba(0,255,0,0.2);
+    z-index: 9999;
+    font-size: 0.9rem;
+    animation: slideIn 0.3s ease;
+}
+.notification.error { background: #1a0000; border-color: #ff3333; color: #ff3333; }
+
+@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+@keyframes pulse { 0%, 100% { opacity: 0.65; } 50% { opacity: 1; } }
+
+.run.pulsing { animation: pulse 1.5s infinite; }
+
+/* 13. Responsive Design */
+@media (max-width: 1100px) {
+    .main { grid-template-columns: 1fr; }
+    .ads-left, .ads-right { display: none; }
+    .workspace { grid-template-columns: 1fr 80px 1fr; gap: 1rem; padding: 1rem; }
+}
+
+@media (max-width: 900px) {
+    .workspace {
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr auto 1fr;
+    }
+    .panel { height: 40vh; min-height: 300px; } /* 移动端高度进一步降低 */
+    .run { transform: rotate(90deg); margin: 0.5rem 0; }
+    
+    #bidirectional-controls {
+        flex-direction: row; 
+        width: 100%;
+        justify-content: center;
+    }
+    #bidirectional-controls .run { transform: rotate(0deg); width: auto; padding: 0 1.5rem;}
+    .run-label { display: none; }
+}
+
+@media (max-width: 600px) {
+    h1 { font-size: 1.8rem; letter-spacing: 2px; }
+    .nav-category { padding: 0.5rem 0.8rem; font-size: 0.8rem; }
+    textarea, .rich-output { padding: 0.8rem; font-size: 0.9rem; }
+}
+
+
+/* --- 布局修正：动态输入区域紧凑化 --- */
+
+/* 1. 主控制网格：允许控件并排 */
+.hack-controls-grid {
+    display: flex; /* 使用 Flex 布局 */
+    gap: 1.5rem; /* 控件之间留出间距 */
+    flex-wrap: wrap; /* 空间不够时允许换行 */
+    margin-bottom: 1.2 rem; /* 与下方说明文字留出间距 */
+}
+
+/* 2. 单个表单行容器：确保 Label 和 Select 垂直堆叠 */
+.hack-form-row {
+    display: flex;
+    flex-direction: column; /* 保持 label 在 select 上方 */
+    flex: 1; /* 每个控件尽可能占据可用空间 */
+    min-width: 180px; /* 确保最小宽度，防止挤压太厉害 */
+}
+
+/* 3. 强制标签和选择框为 block，并让标签变窄 */
+.hack-label {
+    /* 保持原有字体样式 */
+    color: #00aa33;
+    font-size: 0.8rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.4rem;
+    display: block; /* 确保独占一行 */
+    width: auto; /* 自动宽度，避免挤压 */
+}
+
+.hack-select {
+    /* 保持原有样式，确保宽度填满 .hack-form-row */
+    width: 100%;
+}
+
+
+/* --- Win提权辅助工具的列表项组件样式 (hack-list-item) --- */
+
+.hack-list-item {
+    display: block;
+    padding: 0.6rem 1rem;
+    background: #001100;
+    border: 1px solid #003300;
+    color: #00dd33;
+    text-decoration: none;
+    margin-bottom: 2px;
+    font-size: 0.9rem;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.hack-list-item:hover {
+    background: #002200;
+    border-color: #00ff41;
+    color: #00ff41;
+}
+
+.hack-list-item strong {
+    color: #ffcccc; 
+    font-weight: bold;
+}
+
+/* --- Win Exploit Helper List Wrapper (hack-output-list-wrapper) --- */
+/* 限制输出列表的最大高度，并在内容溢出时显示滚动条 */
+.hack-output-list-wrapper {
+    width: 100%;
+    /* 限制列表最大高度，防止其占用过多垂直空间 */
+    max-height: 400px; 
+    overflow-y: auto; 
+    padding-right: 5px; 
+    /* 消除顶部的额外空白 */
+    margin-top: 5px;
+}

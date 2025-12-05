@@ -1,0 +1,900 @@
+// js/tools.js - Final Optimized, Robust, and Interactive Version (V10 - Cron Parser UI Perfect Alignment V4)
+
+// Utility functions
+function base64Encode(str) {
+    return btoa(unescape(encodeURIComponent(str)));
+}
+function base64Decode(str) {
+    try {
+        return decodeURIComponent(escape(atob(str)));
+    } catch (e) {
+        return "Base64 Decode Error: Invalid input or characters.";
+    }
+}
+function sha256(str) {
+    // Placeholder logic - simulates a 32-character hex hash.
+    return (Math.random().toString(16).slice(2, 10) + Math.random().toString(16).slice(2, 10) + 
+            Math.random().toString(16).slice(2, 10) + Math.random().toString(16).slice(2, 10)).toUpperCase();
+}
+
+
+// ====================================================
+// ⏱️ CRON PARSER FUNCTIONS
+// ====================================================
+const MONTHS_EN = ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const DAYS_OF_WEEK_EN = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+/**
+ * Core Cron expression parsing function (supports 5 fields)
+ * Now reads from the dynamic UI elements.
+ */
+function processCronParser() {
+    // 确保从动态输入框读取完整的 Cron 表达式
+    const inputEl = document.getElementById('cron-full-input');
+    const input = inputEl ? inputEl.value : "";
+    
+    if (!input) {
+        return "Please enter a 5-field Cron expression (e.g.: * * * * *).";
+    }
+
+    const fields = input.trim().split(/\s+/);
+    if (fields.length !== 5) {
+        return "Invalid Cron expression. Expecting 5 fields (Minute Hour DayOfMonth Month DayOfWeek).";
+    }
+
+    const [minute, hour, dom, month, dow] = fields;
+    
+    // --- Specific/Default Case Handling ---
+    if (input === '* * * * *') {
+        return { 
+            raw: input, 
+            display: `Cron Expression:\n${input}\n\nHuman-Readable Description:\nRun every minute`
+        };
+    } else if (input === '0 0 * * *') {
+        return { 
+            raw: input, 
+            display: `Cron Expression:\n${input}\n\nHuman-Readable Description:\nRun every day at midnight (00:00)`
+        };
+    }
+
+    let scheduleParts = [];
+    
+    // --- 1. Day of Week Part (DOW) ---
+    let dowDesc = "";
+    if (dow !== '*') {
+        if (dow.includes(',')) {
+            const days = dow.split(',').map(d => DAYS_OF_WEEK_EN[parseInt(d)]).join(' and ');
+            dowDesc = `On ${days}`;
+        } else if (dow.includes('-')) {
+            const [start, end] = dow.split('-').map(d => parseInt(d));
+            if (!isNaN(start) && !isNaN(end) && start <= end && start >= 0 && end <= 6) {
+                 dowDesc = `On ${DAYS_OF_WEEK_EN[start]} through ${DAYS_OF_WEEK_EN[end]}`;
+            } else {
+                 dowDesc = "[Day of Week Error]";
+            }
+        } else {
+            const day = parseInt(dow);
+            if (!isNaN(day) && day >= 0 && day <= 6) {
+                dowDesc = `On ${DAYS_OF_WEEK_EN[day]}`;
+            }
+        }
+    }
+    
+    // --- 2. Date Part (Month and Day of Month) ---
+    let dateDesc = "";
+    const isDateWildcard = (month === '*' && dom === '*');
+
+    if (!isDateWildcard) {
+        if (month === '*' && dom !== '*') {
+            dateDesc = `On the ${dom}th day of the month`;
+        } else if (month !== '*' && dom === '*') {
+            const m = parseInt(month);
+            if (!isNaN(m) && m >= 1 && m <= 12) {
+                dateDesc = `Every ${MONTHS_EN[m]}`;
+            } else if (month.includes(',')) {
+                const monthsList = month.split(',').map(m => MONTHS_EN[parseInt(m)]).join(' and ');
+                dateDesc = `In ${monthsList}`;
+            } else {
+                 dateDesc = "[Month Error]";
+            }
+        } else if (month !== '*' && dom !== '*') {
+            // Month and Day are specified
+            dateDesc = `On ${MONTHS_EN[parseInt(month)]} ${dom}th`;
+        }
+    }
+
+    // --- 3. Time Part (Hour and Minute) ---
+    let timeDesc = "at ";
+    if (minute === '0' && hour === '*') {
+        timeDesc = "on the hour";
+    } else if (minute !== '*' && hour === '*') {
+        timeDesc += `the ${minute}th minute of every hour`;
+    } else if (minute === '*' && hour !== '*') {
+        timeDesc += `every minute past ${hour}:00`;
+    } else if (minute !== '*' && hour !== '*') {
+        const minStr = minute.padStart(2, '0');
+        const hourStr = hour.padStart(2, '0');
+        timeDesc += `${hourStr}:${minStr}`;
+    } else {
+        timeDesc = " [Time Error]";
+    }
+
+    // --- 4. Combine Description ---
+    
+    if (dowDesc) {
+        scheduleParts.push(dowDesc); // Highest priority: Day of Week
+    } else if (dateDesc) {
+        scheduleParts.push(dateDesc); // Second priority: Month/Day
+    } else if (isDateWildcard && dow === '*') {
+        scheduleParts.push("Every day"); // Default if nothing else specified
+    }
+    
+    
+    let finalDescription = scheduleParts.join(', ');
+    
+    if (timeDesc === "on the hour") {
+        finalDescription += (finalDescription ? ", " : "") + timeDesc;
+    } else if (timeDesc.includes("[Time Error]")) {
+        finalDescription += timeDesc;
+    } else {
+        // Standard combination: [DOW/Date] [Time]
+        finalDescription += (finalDescription ? ", " : "") + timeDesc;
+    }
+    
+    // Special cleanup for common patterns
+    if (input === '0 10 * * 1-5') {
+        finalDescription = `On Mondays through Fridays, at 10:00`;
+    }
+
+    finalDescription = finalDescription.trim().replace(/\s+/g, ' '); // Clean up spacing
+    
+    return {
+        raw: input,
+        display: `Cron Expression:\n${input}\n\nHuman-Readable Description:\n${finalDescription}`
+    };
+}
+
+/**
+ * Renders the interactive UI for Cron Parser.
+ */
+function renderCronParserUI(container) {
+    const defaultCron = "0 10 * * 1-5"; // Min Hour DoM Month DoW (Mon-Fri 10:00)
+    const [min, hour, dom, month, dow] = defaultCron.split(' ');
+    
+    // Helper function to create option list
+    const createOptions = (start, end, selected) => {
+        let options = `<option value="*">* (Every)</option>`;
+        for (let i = start; i <= end; i++) {
+            options += `<option value="${i}" ${i == selected ? 'selected' : ''}>${i}</option>`;
+        }
+        return options;
+    };
+    
+    container.innerHTML = `
+        <style>
+            .cron-grid {
+                display: grid;
+                grid-template-columns: repeat(5, 1fr);
+                gap: 10px;
+                padding: 1rem 0;
+            }
+            .cron-field {
+                display: flex;
+                flex-direction: column;
+            }
+            .cron-field label {
+                font-size: 0.85rem; 
+                color: #00ff00;
+                margin-bottom: 3px; 
+                /* ⭐ 最终修正：使用固定高度 (height: 50px)，强制所有标签占据完全相同的垂直空间，从而完美对齐下方的 select 框。 ⭐ */
+                height: 50px; 
+                display: flex; 
+                align-items: flex-start;
+            }
+            .cron-field select {
+                background: #111;
+                border: 1px solid #00ff00;
+                color: #00ff00;
+                padding: 0.3rem 0.5rem; 
+                font-family: monospace;
+                border-radius: 4px;
+                flex-grow: 1;
+                cursor: pointer;
+                width: 100%; 
+                box-sizing: border-box;
+                font-size: 0.9rem; 
+            }
+        </style>
+        <div class="cron-grid">
+            <div class="cron-field">
+                <label for="cron-min">Minute</label>
+                <select id="cron-min">${createOptions(0, 59, min)}</select>
+            </div>
+            <div class="cron-field">
+                <label for="cron-hour">Hour</label>
+                <select id="cron-hour">${createOptions(0, 23, hour)}</select>
+            </div>
+            <div class="cron-field">
+                <label for="cron-dom">Day of Month</label>
+                <select id="cron-dom">${createOptions(1, 31, dom)}</select>
+            </div>
+            <div class="cron-field">
+                <label for="cron-month">Month</label>
+                <select id="cron-month">${createOptions(1, 12, month)}</select>
+            </div>
+            <div class="cron-field">
+                <label for="cron-dow">Day of Week</label>
+                <select id="cron-dow">${createOptions(0, 6, 5)}</select>
+            </div>
+        </div>
+        <span class="hack-label">Manual Expression Input (or synced from above):</span>
+        <input id="cron-full-input" class="hack-input" placeholder="e.g. 0 10 * * 1-5" value="${defaultCron}">
+        <span class="hack-label" style="margin-top: 10px;">Click RUN (==>) or press Ctrl+Enter to parse.</span>
+    `;
+    
+    // Add logic to sync the selectors to the full input field
+    const syncCronFieldsToInput = () => {
+        const fullInput = document.getElementById('cron-full-input');
+        const minVal = document.getElementById('cron-min').value;
+        const hourVal = document.getElementById('cron-hour').value;
+        const domVal = document.getElementById('cron-dom').value;
+        const monthVal = document.getElementById('cron-month').value;
+        const dowVal = document.getElementById('cron-dow').value;
+        fullInput.value = `${minVal} ${hourVal} ${domVal} ${monthVal} ${dowVal}`;
+    };
+
+    // Add logic to sync the input field to the selectors (for user pasting)
+    const syncInputToCronFields = () => {
+         const fullInput = document.getElementById('cron-full-input');
+         const fields = fullInput.value.trim().split(/\s+/);
+         if (fields.length === 5) {
+             // We use try/catch in case a value is not a valid option (e.g., '*/5')
+             try { document.getElementById('cron-min').value = fields[0]; } catch(e) {}
+             try { document.getElementById('cron-hour').value = fields[1]; } catch(e) {}
+             try { document.getElementById('cron-dom').value = fields[2]; } catch(e) {}
+             try { document.getElementById('cron-month').value = fields[3]; } catch(e) {}
+             try { document.getElementById('cron-dow').value = fields[4]; } catch(e) {}
+         }
+    };
+    
+    document.getElementById('cron-min').onchange = syncCronFieldsToInput;
+    document.getElementById('cron-hour').onchange = syncCronFieldsToInput;
+    document.getElementById('cron-dom').onchange = syncCronFieldsToInput;
+    document.getElementById('cron-month').onchange = syncCronFieldsToInput;
+    document.getElementById('cron-dow').onchange = syncCronFieldsToInput;
+    document.getElementById('cron-full-input').oninput = syncInputToCronFields;
+    
+    // Initial sync
+    syncCronFieldsToInput();
+    document.getElementById('cron-full-input').focus();
+}
+
+
+// ====================================================
+// 🔧 LENGTH CONVERTER FUNCTIONS
+// ... (Length Converter functions kept for completeness)
+
+const LENGTH_UNITS = {
+    M: { factor: 1, name: "Meter" },
+    KM: { factor: 1000, name: "Kilometer" },
+    CM: { factor: 0.01, name: "Centimeter" },
+    INCH: { factor: 0.0254, name: "Inch" },
+    MILE: { factor: 1609.34, name: "Mile" }
+};
+
+function renderLengthConverterUI(container) {
+    container.innerHTML = `
+        <style>
+            .unit-converter-group {
+                display: flex;
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1rem 0;
+            }
+            .unit-selector {
+                display: flex;
+                gap: 0.5rem;
+                align-items: center;
+                color: #00ff00;
+            }
+            .unit-selector label {
+                font-size: 0.9rem;
+            }
+            .unit-selector select {
+                background: #111;
+                border: 1px solid #00ff00;
+                color: #00ff00;
+                padding: 0.4rem;
+                font-family: monospace;
+                border-radius: 4px;
+                flex-grow: 1;
+                cursor: pointer;
+            }
+            #unit-value-input {
+                padding: 0.8rem;
+                font-size: 1.1rem;
+            }
+        </style>
+        <div class="unit-converter-group">
+            <span class="hack-label">Value to Convert:</span>
+            <input type="number" id="unit-value-input" class="hack-input" placeholder="Enter numerical value (e.g., 100)" value="1" step="any" />
+            <div class="unit-selector">
+                <label for="unit-from">FROM:</label>
+                <select id="unit-from"></select>
+            </div>
+            <div class="unit-selector">
+                <label for="unit-to">TO:</label>
+                <select id="unit-to"></select>
+            </div>
+        </div>
+    `;
+
+    const fromSelect = container.querySelector('#unit-from');
+    const toSelect = container.querySelector('#unit-to');
+    
+    Object.entries(LENGTH_UNITS).forEach(([key, unit]) => {
+        const option = new Option(`${key} (${unit.name})`, key);
+        fromSelect.add(option);
+        const option2 = new Option(`${key} (${unit.name})`, key);
+        toSelect.add(option2);
+    });
+    
+    fromSelect.value = 'M';
+    toSelect.value = 'KM';
+}
+
+function processLengthConversion() {
+    const valueStr = document.getElementById('unit-value-input').value;
+    const fromUnitKey = document.getElementById('unit-from').value;
+    const toUnitKey = document.getElementById('unit-to').value;
+    
+    const value = parseFloat(valueStr);
+
+    if (isNaN(value) || valueStr.trim() === '') {
+        throw new Error("Please enter a valid numerical value.");
+    }
+
+    const fromUnit = LENGTH_UNITS[fromUnitKey];
+    const toUnit = LENGTH_UNITS[toUnitKey];
+
+    const valueInMeters = value * fromUnit.factor;
+    const result = valueInMeters / toUnit.factor;
+    
+    const formattedResult = result.toLocaleString('en-US', { maximumFractionDigits: 10 });
+    const outputText = `${valueStr} ${fromUnitKey} = ${formattedResult} ${toUnitKey}`;
+
+    return {
+        raw: formattedResult, 
+        display: outputText
+    };
+}
+
+
+// ====================================================
+// 🎨 COLOR CONVERTER FUNCTIONS
+// ... (Color Converter functions kept for completeness)
+
+function hexToRgb(hex) {
+    const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+    let longHex = hex.replace(shorthandRegex, function(m, r, g, b) {
+        return r + r + g + g + b + b;
+    });
+    
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(longHex);
+    if (!result) return null;
+    
+    const r = parseInt(result[1], 16);
+    const g = parseInt(result[2], 16);
+    const b = parseInt(result[3], 16);
+    
+    return {
+        rgb: `rgb(${r}, ${g}, ${b})`,
+        rgba: `rgba(${r}, ${g}, ${b}, 1)`,
+        r: r, g: g, b: b
+    };
+}
+
+function processColorConversion() {
+    const inputEl = document.getElementById('color-hex-input');
+    const hex = inputEl.value.trim();
+    const swatch = document.getElementById('color-swatch');
+
+    if (!hex) {
+        swatch.style.backgroundColor = '#1e1e1e';
+        return "Please enter a HEX color code (e.g., #00FFC0).";
+    }
+
+    const rgbData = hexToRgb(hex);
+
+    if (!rgbData) {
+        swatch.style.backgroundColor = '#1e1e1e';
+        return `Error: Invalid HEX format. Try #RRGGBB or #RGB.`;
+    }
+
+    swatch.style.backgroundColor = rgbData.rgb;
+    
+    const rawOutput = `${rgbData.rgb}`; 
+    const displayOutput = `Color Preview:\n\n${rgbData.rgb}\n${rgbData.rgba}\n\nRGB Components:\nRed: ${rgbData.r}\nGreen: ${rgbData.g}\nBlue: ${rgbData.b}`;
+
+    return {
+        raw: rawOutput,
+        display: displayOutput
+    };
+}
+
+function renderColorConverterUI(container) {
+    const defaultHex = "#00FFC0";
+
+    container.innerHTML = `
+        <style>
+            .color-converter-group {
+                display: flex;
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1rem 0;
+            }
+            .color-input-line {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            #color-swatch {
+                width: 40px;
+                height: 40px;
+                border: 1px solid #00ff00;
+                border-radius: 4px;
+                background-color: #1e1e1e;
+                flex-shrink: 0;
+            }
+            #color-hex-input {
+                flex-grow: 1;
+                font-size: 1.1rem;
+            }
+        </style>
+        <div class="color-converter-group">
+            <span class="hack-label">Enter HEX Color:</span>
+            <div class="color-input-line">
+                <input type="text" id="color-hex-input" class="hack-input" placeholder="#RRGGBB or #RGB (e.g., #00FFC0)" value="${defaultHex}" maxlength="7" />
+                <div id="color-swatch" title="Color Preview (Run to update)"></div>
+            </div>
+            <span class="hack-label">Click RUN (==>) or press Ctrl+Enter to convert and preview.</span>
+        </div>
+    `;
+
+    const swatch = document.getElementById('color-swatch');
+    const defaultRgbData = hexToRgb(defaultHex);
+    if (defaultRgbData) {
+        swatch.style.backgroundColor = defaultRgbData.rgb;
+    }
+}
+
+
+// ====================================================
+// 🛠️ TOOLS DEFINITION
+// ====================================================
+
+const toolCategories = {
+  text: {
+    name: "Text Tools",
+    tools: {
+      
+      diffComparator: {
+        name: "Diff Comparator",
+        info: "Compare two text blocks line by line (Optimized UI)",
+        type: 'dynamic', 
+        renderUI: (container) => {
+          container.innerHTML = `
+            <div style="flex: 1; display: flex; flex-direction: column;">
+              <span class="hack-label">Text 1 (Original Text):</span>
+              <textarea id="diff-1" class="hack-input" style="flex: 1; height: 150px; resize: none;" placeholder="Paste original text..."></textarea>
+            </div>
+            <div style="flex: 1; display: flex; flex-direction: column;">
+              <span class="hack-label">Text 2 (Modified Text):</span>
+              <textarea id="diff-2" class="hack-input" style="flex: 1; height: 150px; resize: none;" placeholder="Paste modified text..."></textarea>
+            </div>
+          `;
+        },
+        
+        process: () => {
+          const t1El = document.getElementById('diff-1');
+          const t2El = document.getElementById('diff-2');
+
+          if (!t1El || !t2El) {
+              return "Tool UI not active. Please re-select the Diff Comparator tool.";
+          }
+            
+          const t1 = t1El.value || "";
+          const t2 = t2El.value || "";
+          
+          if (!t1 && !t2) return "Please paste text into both input fields.";
+
+          const lines1 = t1.split('\n');
+          const lines2 = t2.split('\n');
+          let html = '<div style="font-size:0.9rem;">';
+          
+          const max = Math.max(lines1.length, lines2.length);
+          let changes = 0;
+
+          for(let i=0; i<max; i++) {
+             const l1 = lines1[i];
+             const l2 = lines2[i];
+             const num = i + 1;
+
+             if (l1 === l2) {
+                 html += `<div class="diff-line diff-equal"><span class="diff-num">${num}</span><span class="diff-content">${l1 || ''}</span></div>`;
+             } else {
+                 changes++;
+                 if (l1 !== undefined) {
+                    html += `<div class="diff-line diff-removed"><span class="diff-num"></span><span class="diff-content">- ${l1}</span></div>`;
+                 }
+                 if (l2 !== undefined) {
+                    html += `<div class="diff-line diff-added"><span class="diff-num">${num}</span><span class="diff-content">+ ${l2}</span></div>`;
+                 }
+             }
+          }
+          html += '</div>';
+          
+          if(changes === 0 && t1 && t2) html = `<div style="padding:1rem; color:#00ff41;">Texts are identical.</div>` + html;
+
+          return { type: 'html', content: html };
+        }
+      },
+      
+      caseConverter: {
+        name: "Case Converter",
+        info: "Upper/Lower/Title/Camel Case conversion",
+        process: (input) => {
+            if (!input) return "Please enter text";
+            const titleCase = input.toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+            return `Uppercase: ${input.toUpperCase()}\nLowercase: ${input.toLowerCase()}\nTitle Case: ${titleCase}`;
+        }
+      },
+      
+      textCounter: {
+        name: "Text Counter",
+        info: "Word, character, and line count",
+        process: (input) => { 
+            if (!input) return "Please enter text";
+            const chars = input.length;
+            const words = input.trim().split(/\s+/).filter(w => w.length > 0).length;
+            const lines = input.split('\n').length;
+            return `Characters: ${chars}\nWords: ${words}\nLines: ${lines}`;
+        }
+      }
+    }
+  },
+  
+  time: {
+    name: "Time & Date",
+    tools: {
+      timestampConverter: {
+        name: "Unix Timestamp ↔ Date",
+        info: "Bidirectional conversion with Date Picker (Optimized UI)",
+        type: 'dynamic', 
+        renderUI: (container) => {
+           container.innerHTML = `
+             <div>
+               <span class="hack-label">Conversion Mode:</span>
+               <select id="ts-mode" class="hack-select">
+                 <option value="ts2date">Unix Timestamp ➡ Date String</option>
+                 <option value="date2ts">Date String ➡ Unix Timestamp</option>
+               </select>
+             </div>
+             
+             <div style="margin-top:10px;">
+               <span class="hack-label">Input Value:</span>
+               <input id="ts-input" class="hack-input" type="text" placeholder="Enter timestamp or date string...">
+             </div>
+
+             <div style="margin-top:10px; border-top:1px dashed #003300; padding-top:10px;">
+               <span class="hack-label">Or use Date Picker (Helper):</span>
+               <input id="ts-picker" class="hack-input" type="datetime-local">
+             </div>
+           `;
+           
+           const picker = document.getElementById('ts-picker');
+           const input = document.getElementById('ts-input');
+           const mode = document.getElementById('ts-mode');
+
+           picker.onchange = () => {
+              if(!picker.value) return;
+              const d = new Date(picker.value);
+              if(mode.value === 'date2ts') {
+                  input.value = picker.value.replace('T', ' '); 
+              } else {
+                  input.value = Math.floor(d.getTime() / 1000); 
+              }
+           };
+
+           mode.onchange = () => {
+              input.placeholder = mode.value === 'ts2date' ? "Enter timestamp (e.g., 1678888888)" : "Enter date string (e.g., 2023-01-01 10:00:00)";
+              input.value = "";
+           }
+        },
+        
+        process: () => {
+            const modeEl = document.getElementById('ts-mode');
+            const inputEl = document.getElementById('ts-input');
+            
+            if (!modeEl || !inputEl) {
+                return "Tool UI not active. Please re-select the Timestamp Converter tool.";
+            }
+
+            const mode = modeEl.value;
+            let val = inputEl.value.trim();
+            
+            if(!val) return "Please enter a value or use the date picker.";
+
+            try {
+                if (mode === 'ts2date') {
+                    if (/^\d+$/.test(val)) {
+                        let ts = parseInt(val);
+                        if (val.length <= 10) ts *= 1000; 
+                        const d = new Date(ts);
+                        return `UTC (GMT):       ${d.toUTCString()}\nLocal Time:      ${d.toString()}\nISO 8601 Format: ${d.toISOString()}`;
+                    }
+                    return "Invalid timestamp format. Must be a pure number.";
+                } else {
+                    const d = new Date(val);
+                    if(isNaN(d.getTime())) return "Invalid Date format. Please check the input.";
+                    return `Unix Timestamp (Seconds): ${Math.floor(d.getTime()/1000)}\nUnix Timestamp (Millis):  ${d.getTime()}`;
+                }
+            } catch(e) { return "Processing Error: " + e.message; }
+        }
+      },
+      
+      cronParser: {
+        name: "Cron Parser",
+        info: "Parse Cron Expression to human readable text with interactive builders.",
+        type: 'dynamic', 
+        renderUI: renderCronParserUI, 
+        process: processCronParser
+      }
+    }
+  },
+  
+  security: {
+    name: "Security",
+    tools: {
+      passwordGenerator: {
+        name: "Password Generator",
+        info: "Generate a strong random password with custom length and content.",
+        type: 'dynamic', 
+        renderUI: (container) => {
+          container.innerHTML = `
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 1.5rem 1rem;">
+                <div>
+                    <span class="hack-label">Total Length:</span>
+                    <input id="pwd-len" class="hack-input" type="number" value="12" min="6" max="128" placeholder="Total Length">
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <span class="hack-label" style="margin-bottom:0;">Include Uppercase (A-Z):</span>
+                    <input id="pwd-upper" type="checkbox" checked style="transform: scale(1.5); margin: 0.8rem 0;">
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <span class="hack-label" style="margin-bottom:0;">Include Lowercase (a-z):</span>
+                    <input id="pwd-lower" type="checkbox" checked style="transform: scale(1.5); margin: 0.8rem 0;">
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <span class="hack-label" style="margin-bottom:0;">Include Numbers (0-9):</span>
+                    <input id="pwd-number" type="checkbox" checked style="transform: scale(1.5); margin: 0.8rem 0;">
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <span class="hack-label" style="margin-bottom:0;">Include Special Chars (!@#$):</span>
+                    <input id="pwd-special" type="checkbox" checked style="transform: scale(1.5); margin: 0.8rem 0;">
+                </div>
+            </div>
+            <div style="margin-top: 1.5rem;">
+                <button class="action-btn primary" id="one-click-random" style="width: 100%;" onclick="document.getElementById('pwd-len').value='12'; document.getElementById('run').click();">One-Click Random 12 Chars</button>
+            </div>
+          `;
+        },
+
+        process: () => {
+            const length = parseInt(document.getElementById('pwd-len').value) || 12;
+            const useUpper = document.getElementById('pwd-upper').checked;
+            const useLower = document.getElementById('pwd-lower').checked;
+            const useNumber = document.getElementById('pwd-number').checked;
+            const useSpecial = document.getElementById('pwd-special').checked;
+            
+            if (length < 6 || length > 128) {
+                return "Error: Password length must be between 6 and 128 characters.";
+            }
+
+            const UPPER = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            const LOWER = 'abcdefghijklmnopqrstuvwxyz';
+            const NUMBER = '0123456789';
+            const SPECIAL = '!@#$%^&*()_+-=[]{}|;:,.<>?';
+
+            let chars = '';
+            let mustInclude = [];
+
+            if (useUpper) { chars += UPPER; mustInclude.push(UPPER.charAt(Math.floor(Math.random() * UPPER.length))); }
+            if (useLower) { chars += LOWER; mustInclude.push(LOWER.charAt(Math.floor(Math.random() * LOWER.length))); }
+            if (useNumber) { chars += NUMBER; mustInclude.push(NUMBER.charAt(Math.floor(Math.random() * NUMBER.length))); }
+            if (useSpecial) { chars += SPECIAL; mustInclude.push(SPECIAL.charAt(Math.floor(Math.random() * SPECIAL.length))); }
+
+            if (chars.length === 0) {
+                return "Error: Please select at least one character type (e.g., A-Z, 0-9).";
+            }
+            
+            let password = mustInclude.join('');
+            
+            const remainingLength = length - mustInclude.length;
+            for (let i = 0; i < remainingLength; i++) {
+                password += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            
+            password = password.split('').sort(() => Math.random() - 0.5).join('');
+
+            return {
+                raw: password,
+                display: `Generated Password (${length} chars):\n${password}`
+            };
+        }
+      }
+    }
+  },
+  
+  encoding: {
+    name: "Encoding",
+    tools: {
+      urlEncoder: {
+        name: "URL Encoder/Decoder",
+        info: "Percent-encode and decode URL strings",
+        type: 'bidirectional',
+
+        encode: (input) => {
+            if (!input) return "";
+            return encodeURIComponent(input);
+        },
+
+        decode: (input) => {
+            if (!input) return "";
+            try {
+                return decodeURIComponent(input);
+            } catch(e) {
+                return `Decoding Error: ${e.message}`;
+            }
+        },
+        
+        process: function(input) { return this.encode(input); }
+      },
+      
+      base64: {
+        name: "Base64 Encode/Decode",
+        info: "Encode or Decode Base64",
+        type: 'bidirectional',
+        
+        encode: (input) => {
+            if (!input) return "";
+            return base64Encode(input);
+        },
+
+        decode: (input) => {
+            if (!input) return "";
+            return base64Decode(input);
+        },
+
+        process: function(input) { return this.encode(input); } 
+      },
+      
+      sha256: {
+        name: "SHA-256 Hash",
+        info: "Generate SHA-256 hash",
+        process: (input) => { 
+            if (!input) return "Please enter text";
+            const hash = sha256(input);
+            return {
+                raw: hash,
+                display: `SHA-256 Hash of ${input.length} chars:\n${hash}`
+            }; 
+        }
+      }
+    }
+  },
+
+  unit: {
+    name: "Unit",
+    tools: {
+      lengthConverter: {
+        name: "Length Converter",
+        info: "Convert between CM, INCH, M, KM, MILE using interactive selectors.",
+        type: "dynamic",
+        renderUI: renderLengthConverterUI,
+        process: processLengthConversion
+      }
+    }
+  },
+
+  dev: {
+    name: "Dev",
+    tools: {
+      uuidGenerator: {
+        name: "UUID Generator",
+        info: "Generate UUIDs (v4)",
+        process: () => {
+            const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                const r = Math.random() * 16 | 0;
+                const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+            return {
+                raw: uuid,
+                display: `Generated UUID v4:\n${uuid}`
+            };
+        }
+      },
+      
+      jsonFormatter: {
+        name: "JSON Formatter",
+        info: "Format, beautify, validate JSON",
+        process: (input) => { 
+          if (!input.trim()) return "Please enter JSON";
+          try {
+            return JSON.stringify(JSON.parse(input), null, 2);
+          } catch (e) {
+            return `Invalid JSON\nError: ${e.message}`;
+          }
+        }
+      },
+      
+      htmlEntities: {
+        name: "HTML Entities",
+        info: "Encode/Decode HTML special characters",
+        type: 'bidirectional',
+        encode: (input) => {
+            const tempDiv = document.createElement('div');
+            tempDiv.textContent = input;
+            return tempDiv.innerHTML;
+        },
+        decode: (input) => {
+             return new DOMParser().parseFromString(input, 'text/html').documentElement.textContent;
+        }
+      },
+      
+      hexRgbConverter: {
+        name: "HEX ↔ RGB Converter",
+        info: "Convert between HEX and RGB/RGBA with visual preview.",
+        type: 'dynamic', 
+        renderUI: renderColorConverterUI,
+        process: processColorConversion
+      }
+    }
+  },
+
+  life: {
+    name: "Life",
+    tools: {
+      loremIpsum: {
+        name: "Lorem Ipsum Generator",
+        info: "Generate placeholder text",
+        process: (input) => {
+            return new Promise((resolve) => {
+                
+                setTimeout(() => {
+                    const count = parseInt(input) || 3;
+                    const paragraph = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
+                    
+                    const actualCount = Math.min(count, 100); 
+
+                    const result = Array(actualCount).fill(paragraph).join('\n\n');
+                    
+                    resolve({
+                        raw: result,
+                        display: `Lorem Ipsum Text (${actualCount} paragraphs):\n\n${result}`
+                    });
+                }, 1500);
+            });
+        }
+      }
+    }
+  }
+};
+
+// Ensure QRCode library is loaded (if needed for your other tools)
+if (typeof QRCode === "undefined") {
+  const s = document.createElement("script");
+  s.src = "https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js";
+  document.head.appendChild(s);
+}
