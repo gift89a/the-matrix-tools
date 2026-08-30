@@ -316,8 +316,9 @@ async function run() {
         return processBidirectional('encode');
     }
     
-    const originalText = runBtn.textContent;
-    runBtn.textContent = "Running...";
+    const originalContent = runBtn.innerHTML;
+    runBtn.innerHTML = "<span>Running</span><b>…</b>";
+    runBtn.setAttribute('aria-busy', 'true');
     runBtn.classList.add('pulsing');
     runBtn.disabled = true;
 
@@ -376,7 +377,8 @@ async function run() {
         output.value = `Error: ${e.message}`;
         notify(`Tool execution failed: ${e.message}`, 'error');
     } finally {
-        runBtn.textContent = originalText;
+        runBtn.innerHTML = originalContent;
+        runBtn.removeAttribute('aria-busy');
         runBtn.classList.remove('pulsing');
         runBtn.disabled = false;
         flashElement(output.style.display === 'none' ? richOutput : output);
@@ -412,6 +414,29 @@ function buildNavMenu() {
     if (toolCategories[initialCat] && toolCategories[initialCat].tools[initialTool]) {
         window.activateTool(initialCat, initialTool);
     }
+}
+
+function setupResponsiveNavigation() {
+    const dropdowns = document.querySelectorAll('.nav-category-dropdown');
+    dropdowns.forEach(dropdown => {
+        const trigger = dropdown.querySelector('.nav-category');
+        trigger?.addEventListener('click', event => {
+            event.stopPropagation();
+            const willOpen = !dropdown.classList.contains('open');
+            dropdowns.forEach(item => {
+                item.classList.remove('open');
+                item.querySelector('.nav-category')?.setAttribute('aria-expanded', 'false');
+            });
+            dropdown.classList.toggle('open', willOpen);
+            trigger.setAttribute('aria-expanded', String(willOpen));
+        });
+    });
+    document.addEventListener('click', () => {
+        dropdowns.forEach(item => {
+            item.classList.remove('open');
+            item.querySelector('.nav-category')?.setAttribute('aria-expanded', 'false');
+        });
+    });
 }
 
 
@@ -524,4 +549,7 @@ document.addEventListener('click', (e) => {
 });
 
 // Initial Setup
-document.addEventListener('DOMContentLoaded', buildNavMenu);
+document.addEventListener('DOMContentLoaded', () => {
+    buildNavMenu();
+    setupResponsiveNavigation();
+});
