@@ -16,28 +16,48 @@ export function processCronParser() {
         return "Please enter a 5-field Cron expression (e.g.: * * * * *).";
     }
 
-    const fields = input.trim().split(/\s+/);
+    const expression = input.trim();
+    const fields = expression.split(/\s+/);
     if (fields.length !== 5) {
         return "Invalid Cron expression. Expecting 5 fields (Minute Hour DayOfMonth Month DayOfWeek).";
     }
 
     const [minute, hour, dom, month, dow] = fields;
+
+    const validateField = (value, min, max, label) => {
+        if (value === '*') return null;
+        for (const part of value.split(',')) {
+            const range = part.split('-');
+            if (range.length > 2 || range.some(item => !/^\d+$/.test(item))) {
+                return `${label} contains an invalid value.`;
+            }
+            const nums = range.map(Number);
+            if (nums.some(num => num < min || num > max) || (nums.length === 2 && nums[0] > nums[1])) {
+                return `${label} must be between ${min} and ${max}.`;
+            }
+        }
+        return null;
+    };
+    for (const [value, min, max, label] of [[minute, 0, 59, 'Minute'], [hour, 0, 23, 'Hour'], [dom, 1, 31, 'Day of Month'], [month, 1, 12, 'Month'], [dow, 0, 6, 'Day of Week']]) {
+        const error = validateField(value, min, max, label);
+        if (error) return `Invalid Cron expression. ${error}`;
+    }
     
     // --- Specific/Default Case Handling ---
-    if (input === '* * * * *') {
+    if (expression === '* * * * *') {
         return { 
-            raw: input, 
-            display: `Cron Expression:\n${input}\n\nHuman-Readable Description:\nRun every minute`
+            raw: expression, 
+            display: `Cron Expression:\n${expression}\n\nHuman-Readable Description:\nRun every minute`
         };
-    } else if (input === '0 0 * * *') {
+    } else if (expression === '0 0 * * *') {
         return { 
-            raw: input, 
-            display: `Cron Expression:\n${input}\n\nHuman-Readable Description:\nRun every day at midnight (00:00)`
+            raw: expression,
+            display: `Cron Expression:\n${expression}\n\nHuman-Readable Description:\nRun every day at midnight (00:00)`
         };
-    } else if (input === '0 10 * * 1-5') {
+    } else if (expression === '0 10 * * 1-5') {
         return {
-            raw: input,
-            display: `Cron Expression:\n${input}\n\nHuman-Readable Description:\nOn Mondays through Fridays, at 10:00`
+            raw: expression,
+            display: `Cron Expression:\n${expression}\n\nHuman-Readable Description:\nOn Mondays through Fridays, at 10:00`
         };
     }
 
@@ -127,8 +147,8 @@ export function processCronParser() {
     finalDescription = finalDescription.trim().replace(/\s+/g, ' ');
     
     return {
-        raw: input,
-        display: `Cron Expression:\n${input}\n\nHuman-Readable Description:\n${finalDescription}`
+        raw: expression,
+        display: `Cron Expression:\n${expression}\n\nHuman-Readable Description:\n${finalDescription}`
     };
 }
 
@@ -162,47 +182,40 @@ export function renderCronParserUI(container) {
                 flex-direction: column;
             }
             .cron-field label {
-                font-size: 0.85rem; 
-                color: #00ff00;
+                font-size: 11px;
+                color: var(--muted);
                 margin-bottom: 3px; 
-                height: 50px; 
+                height: 36px; 
                 display: flex; 
                 align-items: flex-start;
             }
             .cron-field select {
-                background: #111;
-                border: 1px solid #00ff00;
-                color: #00ff00;
-                padding: 0.3rem 0.5rem; 
-                font-family: monospace;
-                border-radius: 4px;
                 flex-grow: 1;
-                cursor: pointer;
-                width: 100%; 
+                width: 100%;
                 box-sizing: border-box;
-                font-size: 0.9rem; 
+                padding: 6px 4px;
             }
         </style>
         <div class="cron-grid">
             <div class="cron-field">
-                <label for="cron-min">Minute</label>
-                <select id="cron-min">${createOptions(0, 59, min)}</select>
+                <label for="cron-min" class="hack-label">Minute</label>
+                <select id="cron-min" class="hack-select">${createOptions(0, 59, min)}</select>
             </div>
             <div class="cron-field">
-                <label for="cron-hour">Hour</label>
-                <select id="cron-hour">${createOptions(0, 23, hour)}</select>
+                <label for="cron-hour" class="hack-label">Hour</label>
+                <select id="cron-hour" class="hack-select">${createOptions(0, 23, hour)}</select>
             </div>
             <div class="cron-field">
-                <label for="cron-dom">Day of Month</label>
-                <select id="cron-dom">${createOptions(1, 31, dom)}</select>
+                <label for="cron-dom" class="hack-label">Day of Month</label>
+                <select id="cron-dom" class="hack-select">${createOptions(1, 31, dom)}</select>
             </div>
             <div class="cron-field">
-                <label for="cron-month">Month</label>
-                <select id="cron-month">${createOptions(1, 12, month)}</select>
+                <label for="cron-month" class="hack-label">Month</label>
+                <select id="cron-month" class="hack-select">${createOptions(1, 12, month)}</select>
             </div>
             <div class="cron-field">
-                <label for="cron-dow">Day of Week</label>
-                <select id="cron-dow">${createOptions(0, 6, 5)}</select>
+                <label for="cron-dow" class="hack-label">Day of Week</label>
+                <select id="cron-dow" class="hack-select">${createOptions(0, 6, 5)}</select>
             </div>
         </div>
         <span class="hack-label">Manual Expression Input (or synced from above):</span>

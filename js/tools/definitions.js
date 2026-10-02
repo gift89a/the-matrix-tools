@@ -70,11 +70,11 @@ function renderDiffComparatorUI() {
     return `
         <div class="hack-input-group">
             <span class="hack-label">Text 1 (Original Text):</span>
-            <textarea id="diff-1" class="hack-input" rows="7" placeholder="Paste original text..."></textarea>
+            <textarea id="diff-1" class="hack-input diff-textarea" rows="7" placeholder="Paste original text..."></textarea>
         </div>
         <div class="hack-input-group" style="margin-top: 1.5rem;">
             <span class="hack-label">Text 2 (Modified Text):</span>
-            <textarea id="diff-2" class="hack-input" rows="7" placeholder="Paste modified text..."></textarea>
+            <textarea id="diff-2" class="hack-input diff-textarea" rows="7" placeholder="Paste modified text..."></textarea>
         </div>
     `;
 }
@@ -164,8 +164,11 @@ function renderPasswordGeneratorUI() {
             <label><input id="pwd-number" type="checkbox" checked> Include Numbers (0-9)</label>
             <label><input id="pwd-special" type="checkbox" checked> Include Special Chars (!@#$)</label>
         </div>
-        <div class="hack-input-group">
-            <button class="hack-select" id="one-click-random" style="background:#004400; border-color:#00ff00; cursor:pointer;">One-Click Random 12 Chars</button>
+        <div class="pwd-strength" id="pwd-strength" data-level="0">
+            <div class="pwd-strength-bars" aria-hidden="true">
+                <span class="pwd-bar"></span><span class="pwd-bar"></span><span class="pwd-bar"></span><span class="pwd-bar"></span>
+            </div>
+            <div class="pwd-strength-text" id="pwd-strength-text">Strength: —</div>
         </div>
     `;
 }
@@ -201,7 +204,30 @@ function processPasswordGenerator() {
     }
     
     password = password.split('').sort(() => Math.random() - 0.5).join('');
+    updateStrengthMeter(password);
     return { raw: password, display: `Generated Password (${length} chars):\n${password}` };
+}
+
+/**
+ * 依据生成结果更新强度指示条（纯视觉点缀，不参与生成逻辑）。
+ */
+function updateStrengthMeter(password) {
+    const meter = document.getElementById('pwd-strength');
+    const text = document.getElementById('pwd-strength-text');
+    if (!meter || !text) return;
+
+    let pool = 0;
+    if (/[A-Z]/.test(password)) pool += 26;
+    if (/[a-z]/.test(password)) pool += 26;
+    if (/[0-9]/.test(password)) pool += 10;
+    if (/[^A-Za-z0-9]/.test(password)) pool += 24;
+
+    const entropy = password.length * Math.log2(pool || 1);
+    const level = entropy >= 90 ? 4 : entropy >= 70 ? 3 : entropy >= 50 ? 2 : 1;
+    const labels = { 1: 'Weak', 2: 'Fair', 3: 'Strong', 4: 'Excellent' };
+
+    meter.dataset.level = String(level);
+    text.textContent = `Strength: ${labels[level]} · ${Math.round(entropy)} bits`;
 }
 
 function processLoremIpsum(input) {
@@ -214,6 +240,123 @@ function processLoremIpsum(input) {
             resolve({ raw: result, display: `Lorem Ipsum Text (${actualCount} paragraphs):\n\n${result}` });
         }, 500);
     });
+}
+
+function processCurrentTimestamp() {
+    const now = Date.now();
+    return `Unix Timestamp (Seconds): ${Math.floor(now / 1000)}\nUnix Timestamp (Milliseconds): ${now}\nUTC: ${new Date(now).toUTCString()}\nISO: ${new Date(now).toISOString()}`;
+}
+
+function renderDateDifferenceUI() {
+    return `<div class="hack-input-group"><span class="hack-label">Start Date</span><input id="date-diff-start" class="hack-input" type="datetime-local"></div><div class="hack-input-group"><span class="hack-label">End Date</span><input id="date-diff-end" class="hack-input" type="datetime-local"></div>`;
+}
+
+function processDateDifference() {
+    const start = new Date(document.getElementById('date-diff-start').value);
+    const end = new Date(document.getElementById('date-diff-end').value);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return 'Please select both dates.';
+    const diff = Math.abs(end - start);
+    const days = Math.floor(diff / 86400000);
+    const hours = Math.floor((diff % 86400000) / 3600000);
+    const minutes = Math.floor((diff % 3600000) / 60000);
+    return `Difference: ${days} days, ${hours} hours, ${minutes} minutes\nStart: ${start.toISOString()}\nEnd: ${end.toISOString()}`;
+}
+
+function renderSimpleUnitUI(kind) {
+    const units = kind === 'temperature' ? ['Celsius', 'Fahrenheit', 'Kelvin'] : ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    return `<div class="unit-converter-group"><div class="hack-input-group"><span class="hack-label">Value</span><input id="unit-value" class="hack-input" type="number" placeholder="Enter a number"></div><div class="hack-controls-grid"><div class="hack-form-row"><span class="hack-label">From</span><select id="unit-from" class="hack-select">${units.map(u => `<option>${u}</option>`).join('')}</select></div><div class="hack-form-row"><span class="hack-label">To</span><select id="unit-to" class="hack-select">${units.map(u => `<option>${u}</option>`).join('')}</select></div></div></div>`;
+}
+
+function processSimpleUnit(kind) {
+    const value = Number(document.getElementById('unit-value').value);
+    const from = document.getElementById('unit-from').value;
+    const to = document.getElementById('unit-to').value;
+    if (!Number.isFinite(value)) return 'Please enter a valid number.';
+    let result;
+    if (kind === 'temperature') {
+        const celsius = from === 'Celsius' ? value : from === 'Fahrenheit' ? (value - 32) * 5 / 9 : value - 273.15;
+        result = to === 'Celsius' ? celsius : to === 'Fahrenheit' ? celsius * 9 / 5 + 32 : celsius + 273.15;
+    } else {
+        const factors = { Bytes: 1, KB: 1024, MB: 1024 ** 2, GB: 1024 ** 3, TB: 1024 ** 4 };
+        result = value * factors[from] / factors[to];
+    }
+    return `${value} ${from} = ${Number(result.toFixed(8))} ${to}`;
+}
+
+function processIPv4Cidr(input) {
+    const value = input.trim();
+    const match = value.match(/^((?:\d{1,3}\.){3}\d{1,3})\/(\d{1,2})$/);
+    if (!match) return 'Enter an IPv4 CIDR block, for example: 192.168.1.0/24';
+    const octets = match[1].split('.').map(Number);
+    const prefix = Number(match[2]);
+    if (octets.some(octet => octet < 0 || octet > 255) || prefix < 0 || prefix > 32) return 'Invalid IPv4 address or prefix length.';
+    const ip = octets.reduce((result, octet) => (result * 256) + octet, 0) >>> 0;
+    const mask = prefix === 0 ? 0 : (0xffffffff << (32 - prefix)) >>> 0;
+    const network = (ip & mask) >>> 0;
+    const broadcast = (network | (~mask >>> 0)) >>> 0;
+    const toIp = number => [number >>> 24, (number >>> 16) & 255, (number >>> 8) & 255, number & 255].join('.');
+    const total = 2 ** (32 - prefix);
+    const usable = prefix >= 31 ? total : Math.max(total - 2, 0);
+    const first = prefix >= 31 ? network : network + 1;
+    const last = prefix >= 31 ? broadcast : broadcast - 1;
+    return `CIDR: ${value}\nNetwork Address: ${toIp(network)}\nBroadcast Address: ${toIp(broadcast)}\nSubnet Mask: ${toIp(mask)}\nWildcard Mask: ${toIp((~mask) >>> 0)}\nFirst Usable IP: ${toIp(first)}\nLast Usable IP: ${toIp(last)}\nTotal Addresses: ${total}\nUsable Hosts: ${usable}`;
+}
+
+function parseCidr(value) {
+    const match = value.trim().match(/^((?:\d{1,3}\.){3}\d{1,3})\/(\d{1,2})$/);
+    if (!match) return null;
+    const octets = match[1].split('.').map(Number);
+    const prefix = Number(match[2]);
+    if (octets.some(octet => octet > 255) || prefix > 32) return null;
+    const ip = octets.reduce((result, octet) => result * 256 + octet, 0) >>> 0;
+    const mask = prefix === 0 ? 0 : (0xffffffff << (32 - prefix)) >>> 0;
+    return { network: (ip & mask) >>> 0, end: ((ip & mask) | (~mask >>> 0)) >>> 0, prefix };
+}
+
+function processIPv4Details(input) {
+    const address = input.trim();
+    const octets = address.split('.').map(Number);
+    if (octets.length !== 4 || octets.some(octet => !Number.isInteger(octet) || octet < 0 || octet > 255)) return 'Enter a valid IPv4 address, for example: 192.168.1.10';
+    const first = octets[0];
+    const type = first === 10 || (first === 172 && octets[1] >= 16 && octets[1] <= 31) || (first === 192 && octets[1] === 168) ? 'Private' : first === 127 ? 'Loopback' : first >= 224 ? 'Multicast or reserved' : 'Public';
+    const integer = octets.reduce((result, octet) => result * 256 + octet, 0);
+    return `IPv4 Address: ${address}\nType: ${type}\nInteger: ${integer}\nBinary: ${octets.map(octet => octet.toString(2).padStart(8, '0')).join('.')}`;
+}
+
+function renderCidrOverlapUI() {
+    return `<div class="hack-input-group"><span class="hack-label">CIDR Block A</span><input id="cidr-a" class="hack-input" placeholder="192.168.1.0/24"></div><div class="hack-input-group"><span class="hack-label">CIDR Block B</span><input id="cidr-b" class="hack-input" placeholder="192.168.1.128/25"></div>`;
+}
+
+function processCidrOverlap() {
+    const a = parseCidr(document.getElementById('cidr-a').value);
+    const b = parseCidr(document.getElementById('cidr-b').value);
+    if (!a || !b) return 'Enter two valid IPv4 CIDR blocks.';
+    const overlaps = a.network <= b.end && b.network <= a.end;
+    return `CIDR A: ${document.getElementById('cidr-a').value.trim()}\nCIDR B: ${document.getElementById('cidr-b').value.trim()}\n\nOverlap: ${overlaps ? 'Yes' : 'No'}`;
+}
+
+function processJwtDecoder(input) {
+    const token = input.trim();
+    if (!token) return 'Please paste a JWT token.';
+    const parts = token.split('.');
+    if (parts.length !== 3) return 'Invalid JWT: expected three dot-separated parts.';
+
+    const decodePart = (part, label) => {
+        try {
+            const normalized = part.replace(/-/g, '+').replace(/_/g, '/');
+            const padded = normalized + '='.repeat((4 - normalized.length % 4) % 4);
+            const text = decodeURIComponent(escape(atob(padded)));
+            return `${label}:\n${JSON.stringify(JSON.parse(text), null, 2)}`;
+        } catch (error) {
+            throw new Error(`Invalid ${label.toLowerCase()}: ${error.message}`);
+        }
+    };
+
+    try {
+        return `${decodePart(parts[0], 'Header')}\n\n${decodePart(parts[1], 'Payload')}\n\nSignature:\n${parts[2]}\n\nNote: signature is displayed only; this tool does not verify it.`;
+    } catch (error) {
+        return `JWT decode error: ${error.message}`;
+    }
 }
 
 
@@ -270,6 +413,11 @@ export const toolCategories = {
                 type: 'one-way', 
                 process: processTextSanitizer, 
             },
+            loremIpsum: {
+                name: "Lorem Ipsum Generator",
+                info: "Generate placeholder text for prototypes and layouts.",
+                process: processLoremIpsum
+            },
         }
     },
     
@@ -293,6 +441,19 @@ export const toolCategories = {
                     return ""; 
                 },
                 process: processCronParser      
+            },
+            currentTimestamp: {
+                name: "Current Timestamp",
+                info: "Show the current Unix timestamp in seconds, milliseconds, UTC, and ISO formats.",
+                process: processCurrentTimestamp,
+                noInput: true
+            },
+            dateDifference: {
+                name: "Date Difference",
+                info: "Calculate the elapsed time between two dates.",
+                type: "dynamic",
+                renderUI: renderDateDifferenceUI,
+                process: processDateDifference
             }
         }
     },
@@ -363,13 +524,18 @@ export const toolCategories = {
                 renderUI: renderUnicodeUI, 
                 process: processUnicodeConversion, 
             },
+            jwtDecoder: {
+                name: "JWT Decoder",
+                info: "Decode JWT header and payload locally. Signature verification is not performed.",
+                type: "standard",
+                process: processJwtDecoder
+            },
             sha256: {
                 name: "SHA-256 Hash",
                 info: "Generate SHA-256 hash",
                 process: (input) => { 
                     if (!input) return "Please enter text";
-                    const hash = sha256(input); 
-                    return { raw: hash, display: `SHA-256 Hash of ${input.length} chars:\n${hash}` }; 
+                    return sha256(input).then(hash => ({ raw: hash, display: `SHA-256 Hash of ${input.length} chars:\n${hash}` }));
                 }
             },
             md5Hash: {
@@ -397,6 +563,45 @@ export const toolCategories = {
                     return "";
                 },
                 process: processLengthConversion  
+            },
+            temperatureConverter: {
+                name: "Temperature Converter",
+                info: "Convert Celsius, Fahrenheit, and Kelvin.",
+                type: "dynamic",
+                renderUI: () => renderSimpleUnitUI('temperature'),
+                process: () => processSimpleUnit('temperature')
+            },
+            dataSizeConverter: {
+                name: "Data Size Converter",
+                info: "Convert bytes, KB, MB, GB, and TB.",
+                type: "dynamic",
+                renderUI: () => renderSimpleUnitUI('data'),
+                process: () => processSimpleUnit('data')
+            }
+        }
+    },
+
+    network: {
+        name: "Network",
+        tools: {
+            ipv4CidrCalculator: {
+                name: "IPv4 CIDR Calculator",
+                info: "Calculate IPv4 network ranges, masks, broadcast addresses, and usable hosts locally.",
+                inputPlaceholder: "Enter an IPv4 CIDR block, e.g. 192.168.1.0/24",
+                process: processIPv4Cidr
+            },
+            ipv4AddressDetails: {
+                name: "IPv4 Address Details",
+                info: "Identify private, public, loopback, integer, and binary IPv4 address details.",
+                inputPlaceholder: "Enter an IPv4 address, e.g. 192.168.1.10",
+                process: processIPv4Details
+            },
+            cidrOverlapChecker: {
+                name: "CIDR Overlap Checker",
+                info: "Check whether two IPv4 CIDR blocks overlap.",
+                type: "dynamic",
+                renderUI: renderCidrOverlapUI,
+                process: processCidrOverlap
             }
         }
     },
@@ -415,10 +620,9 @@ export const toolCategories = {
                 name: "UUID Generator",
                 info: "Generate UUIDs (v4)",
                 process: () => {
-                    const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                    const uuid = crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
                         const r = Math.random() * 16 | 0;
-                        const v = c === 'x' ? r : (r & 0x3 | 0x8);
-                        return v.toString(16);
+                        return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
                     });
                     return { raw: uuid, display: `Generated UUID v4:\n${uuid}` };
                 }
@@ -463,17 +667,6 @@ export const toolCategories = {
                 render: renderCodeMinifierUI, // 用于渲染选择框和输入框
                 process: processCodeMinifier // 用于处理压缩逻辑
             },
-        }
-    },
-
-    life: {
-        name: "Life",
-        tools: {
-            loremIpsum: {
-                name: "Lorem Ipsum Generator",
-                info: "Generate placeholder text",
-                process: processLoremIpsum
-            }
         }
     }
 };

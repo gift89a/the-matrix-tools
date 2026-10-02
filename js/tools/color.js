@@ -46,6 +46,21 @@ function updateColorElements(hexValue) {
 }
 
 
+/**
+ * 把当前颜色实时写入 Output 面板（无需点击 RUN）。
+ */
+function livePreview() {
+    const outputEl = document.getElementById('output');
+    if (!outputEl) return;
+    const result = processColorConversion();
+    if (typeof result === 'string') {
+        outputEl.value = result;
+    } else if (result && typeof result === 'object') {
+        outputEl.value = result.display || result.raw || '';
+    }
+}
+
+
 export function processColorConversion() {
     // 读取与 Color Picker 同步的文本输入框的值
     const inputEl = document.getElementById('color-hex-input');
@@ -101,25 +116,24 @@ export function renderColorConverterUI(container) {
                 align-items: center;
                 gap: 10px;
             }
-            
+
             #color-hex-input {
                 flex-grow: 1;
-                font-size: 1.1rem;
                 text-transform: uppercase;
-                height: 40px; 
+                height: 40px;
             }
 
             #color-picker-input {
                 -webkit-appearance: none;
                 -moz-appearance: none;
                 appearance: none;
-                width: 40px; 
+                width: 40px;
                 height: 40px;
                 background-color: transparent;
                 border: none;
                 padding: 0;
                 cursor: pointer;
-                border: 1px solid #00ff00; 
+                border: 1px solid #00ff00;
                 border-radius: 4px;
                 flex-shrink: 0;
             }
@@ -138,10 +152,10 @@ export function renderColorConverterUI(container) {
             <span class="hack-label">Input Color (HEX):</span>
             <div class="color-input-line">
                 <input type="color" id="color-picker-input" value="${defaultHex.toLowerCase()}" title="Use Color Picker" />
-                
+
                 <input type="text" id="color-hex-input" class="hack-input" placeholder="#RRGGBB or #RGB (e.g., #00FFC0)" value="${defaultHex}" maxlength="7" />
             </div>
-            <span class="hack-label" style="font-size: 0.9em; color: #00ff41;">Note: Type the HEX code or click the color box to select a color. Click RUN to generate RGB output.</span>
+            <p class="hack-hint">Type the HEX code or click the color box to select a color. Click RUN to generate RGB output.</p>
         </div>
     `;
 
@@ -158,7 +172,8 @@ export function renderColorConverterUI(container) {
     if (inputEl) {
         inputEl.addEventListener('input', (e) => {
             // 💥 修复：移除长度限制，让实时预览更积极地触发 (只有在输入有效HEX时才会实际改变颜色)
-            updateColorElements(e.target.value); 
+            updateColorElements(e.target.value);
+            livePreview();
         });
         // 失去焦点时确保格式修正和同步
         inputEl.addEventListener('blur', (e) => {
@@ -170,6 +185,7 @@ export function renderColorConverterUI(container) {
     if (pickerEl) {
         pickerEl.addEventListener('input', (e) => {
             updateColorElements(e.target.value);
+            livePreview();
         });
     }
 }

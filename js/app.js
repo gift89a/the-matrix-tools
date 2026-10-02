@@ -10,11 +10,24 @@ const toolInfo = document.getElementById('tool-info');
 const runBtn = document.getElementById('run');
 const runLabel = document.getElementById('run-label');
 const inputSubtitle = document.getElementById('input-subtitle');
+const inputKicker = document.getElementById('input-kicker');
+const inputTitle = document.getElementById('input-title');
 const outputSubtitle = document.getElementById('output-subtitle');
 const bidirectionalControls = document.getElementById('bidirectional-controls');
 const encodeBtn = document.getElementById('encode-btn');
 const decodeBtn = document.getElementById('decode-btn');
 const qrCanvas = document.getElementById('qr-canvas');
+const workspace = document.getElementById('workspace');
+const inputActions = document.getElementById('input-actions');
+const selectOutputBtn = document.getElementById('select-output');
+const clockDigital = document.getElementById('clock-digital');
+const clockMs = document.getElementById('clock-ms');
+const clockDate = document.getElementById('clock-date');
+const clockHour = document.getElementById('clock-hour');
+const clockMinute = document.getElementById('clock-minute');
+const clockSecond = document.getElementById('clock-second');
+const stopwatch = document.getElementById('stopwatch');
+let clockTimer = null;
 
 // State Management
 let currentTool = null;
@@ -65,20 +78,52 @@ function flashElement(el) {
 }
 
 /**
+ * 左栏计时器：比赛秒表风格，毫秒持续跳动。
+ */
+function startClock() {
+    stopClock();
+    const pad = (n, width = 2) => String(n).padStart(width, '0');
+
+    const tick = () => {
+        const now = new Date();
+        const seconds = now.getSeconds() + now.getMilliseconds() / 1000;
+        const minutes = now.getMinutes() + seconds / 60;
+        const hours = (now.getHours() % 12) + minutes / 60;
+
+        if (clockHour) clockHour.setAttribute('transform', `rotate(${hours * 30} 50 50)`);
+        if (clockMinute) clockMinute.setAttribute('transform', `rotate(${minutes * 6} 50 50)`);
+        if (clockSecond) clockSecond.setAttribute('transform', `rotate(${seconds * 6} 50 50)`);
+        if (clockDigital) clockDigital.textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+        if (clockMs) clockMs.textContent = `.${pad(now.getMilliseconds(), 3)}`;
+        if (clockDate) clockDate.textContent = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    };
+
+    tick();
+    clockTimer = setInterval(tick, 16);
+}
+
+function stopClock() {
+    if (clockTimer) {
+        clearInterval(clockTimer);
+        clockTimer = null;
+    }
+}
+
+/**
  * Styles the bidirectional buttons based on active state.
  */
 function styleActiveButton(button, isActive) {
     if (isActive) { 
-        button.style.border = '1px solid #00ff41';
-        button.style.boxShadow = '0 0 5px #00ff41';
-        button.style.backgroundColor = button.id === 'encode-btn' ? '#00ff41' : '#003300';
-        button.style.color = button.id === 'encode-btn' ? '#000' : '#00ff41';
+        button.style.border = '1px solid var(--accent)';
+        button.style.boxShadow = 'none';
+        button.style.backgroundColor = 'var(--accent-soft)';
+        button.style.color = 'var(--accent-strong)';
         button.classList.add('active');
     } else {
-        button.style.border = '1px solid transparent';
+        button.style.border = '1px solid var(--line)';
         button.style.boxShadow = 'none';
-        button.style.backgroundColor = button.id === 'encode-btn' ? 'transparent' : '#003300'; 
-        button.style.color = button.id === 'encode-btn' ? '#00ff41' : '#00aa33';
+        button.style.backgroundColor = 'var(--surface-2)';
+        button.style.color = 'var(--text)';
         button.classList.remove('active');
     }
 }
@@ -96,7 +141,10 @@ function getCustomInputOnlyTools() {
         'diffComparator', 
         'unixTimestampDate', 
         'cronParser', 
-        'lengthConverter', 
+        'lengthConverter',
+        'temperatureConverter',
+        'dataSizeConverter',
+        'dateDifference',
         'hexRgbConverter',
         'passwordGenerator',
         'jsonSchemaValidator',
@@ -104,6 +152,29 @@ function getCustomInputOnlyTools() {
         'codeMinifier',
         'unicodeConverter',
         'regexTester', // <--- 已根据您的要求添加
+        'cidrOverlapChecker',
+    ];
+}
+
+/**
+ * 获取左栏按钮组 (Clear / Select all) 无意义的工具。
+ * 这些工具的输入全部在中间列的自定义控件里，左栏 textarea 是空的，
+ * Clear 会静默重置中间列控件，很容易被误当成"清空输出"。
+ */
+function getHiddenActionButtonsTools() {
+    return [
+        'unixTimestampDate',
+        'dateDifference',
+        'cronParser',
+        'lengthConverter',
+        'temperatureConverter',
+        'dataSizeConverter',
+        'hexRgbConverter',
+        'passwordGenerator',
+        'codeMinifier',
+        'unicodeConverter',
+        'regexTester',
+        'cidrOverlapChecker',
     ];
 }
 
@@ -155,9 +226,34 @@ function activateTool(cat, toolKey) {
     runBtn.style.display = 'block';
     runLabel.style.display = 'block';
     toolInfo.style.display = 'block';
+    inputActions.style.display = 'flex';
+    inputActions.style.visibility = '';
+    if (selectOutputBtn) selectOutputBtn.disabled = false;
     input.value = "";
-    input.placeholder = "Paste your data...";
+    input.placeholder = tool.inputPlaceholder || "Paste your data...";
     input.focus();
+    workspace?.classList.remove('no-input', 'clock-panel');
+    if (stopwatch) stopwatch.style.display = 'none';
+    if (tool.noInput) {
+        workspace?.classList.add('clock-panel');
+        input.style.display = 'none';
+        if (stopwatch) stopwatch.style.display = 'flex';
+        startClock();
+        if (inputKicker) inputKicker.textContent = 'TIME';
+        if (inputTitle) inputTitle.textContent = 'Local Clock';
+        inputActions.style.visibility = 'hidden';
+        inputSubtitle.textContent = 'Live clock';
+        setTimeout(() => window.run(), 0);
+    } else {
+        stopClock();
+        if (inputKicker) inputKicker.textContent = 'SOURCE';
+        if (inputTitle) inputTitle.textContent = 'Input';
+    }
+
+    // 自定义输入类工具：左栏 textarea 为空，Clear / Select all 只会产生误导
+    if (getHiddenActionButtonsTools().includes(toolKey)) {
+        inputActions.style.visibility = 'hidden';
+    }
 
     // 3. Update Tool Info Panel
     toolInfo.innerHTML = `<h3>${tool.name}</h3><p>${tool.info}</p>`;
@@ -186,6 +282,8 @@ function activateTool(cat, toolKey) {
             // 这些工具 (包括 Regex Tester) 只使用 dynamicInput，因此隐藏 input
             input.style.display = 'none';
             inputSubtitle.textContent = tool.name + " Inputs"; 
+            // 空 textarea 已被隐藏，Clear / Select all 失去意义（保留占位以对齐右栏）
+            inputActions.style.visibility = 'hidden';
         } else {
             // 其他工具，如 Regex Tester，需要主输入框来接收文本 (不再适用)
             input.style.display = 'block'; 
@@ -223,6 +321,7 @@ function activateTool(cat, toolKey) {
     if (toolKey === 'diffComparator') {
         output.style.display = 'none';
         richOutput.style.display = 'flex';
+        if (selectOutputBtn) selectOutputBtn.disabled = true;
     }
 
     // Set initial tool to show if needed
@@ -316,8 +415,9 @@ async function run() {
         return processBidirectional('encode');
     }
     
-    const originalText = runBtn.textContent;
-    runBtn.textContent = "Running...";
+    const originalContent = runBtn.innerHTML;
+    runBtn.innerHTML = "<span>Running</span><b>…</b>";
+    runBtn.setAttribute('aria-busy', 'true');
     runBtn.classList.add('pulsing');
     runBtn.disabled = true;
 
@@ -376,7 +476,8 @@ async function run() {
         output.value = `Error: ${e.message}`;
         notify(`Tool execution failed: ${e.message}`, 'error');
     } finally {
-        runBtn.textContent = originalText;
+        runBtn.innerHTML = originalContent;
+        runBtn.removeAttribute('aria-busy');
         runBtn.classList.remove('pulsing');
         runBtn.disabled = false;
         flashElement(output.style.display === 'none' ? richOutput : output);
@@ -412,6 +513,29 @@ function buildNavMenu() {
     if (toolCategories[initialCat] && toolCategories[initialCat].tools[initialTool]) {
         window.activateTool(initialCat, initialTool);
     }
+}
+
+function setupResponsiveNavigation() {
+    const dropdowns = document.querySelectorAll('.nav-category-dropdown');
+    dropdowns.forEach(dropdown => {
+        const trigger = dropdown.querySelector('.nav-category');
+        trigger?.addEventListener('click', event => {
+            event.stopPropagation();
+            const willOpen = !dropdown.classList.contains('open');
+            dropdowns.forEach(item => {
+                item.classList.remove('open');
+                item.querySelector('.nav-category')?.setAttribute('aria-expanded', 'false');
+            });
+            dropdown.classList.toggle('open', willOpen);
+            trigger.setAttribute('aria-expanded', String(willOpen));
+        });
+    });
+    document.addEventListener('click', () => {
+        dropdowns.forEach(item => {
+            item.classList.remove('open');
+            item.querySelector('.nav-category')?.setAttribute('aria-expanded', 'false');
+        });
+    });
 }
 
 
@@ -514,14 +638,8 @@ document.addEventListener("keydown", e => {
     }
 });
 
-// Attach listener for password generator one-click button
-document.addEventListener('click', (e) => {
-    if (e.target.id === 'one-click-random') {
-        const pwdLen = document.getElementById('pwd-len');
-        if (pwdLen) pwdLen.value = '12';
-        window.run();
-    }
-});
-
 // Initial Setup
-document.addEventListener('DOMContentLoaded', buildNavMenu);
+document.addEventListener('DOMContentLoaded', () => {
+    buildNavMenu();
+    setupResponsiveNavigation();
+});

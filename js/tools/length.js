@@ -22,36 +22,20 @@ export function renderLengthConverterUI(container) {
                 display: flex;
                 gap: 0.5rem;
                 align-items: center;
-                color: #00ff00;
             }
-            .unit-selector label {
-                font-size: 0.9rem;
-            }
-            .unit-selector select {
-                background: #111;
-                border: 1px solid #00ff00;
-                color: #00ff00;
-                padding: 0.4rem;
-                font-family: monospace;
-                border-radius: 4px;
-                flex-grow: 1;
-                cursor: pointer;
-            }
-            #unit-value-input {
-                padding: 0.8rem;
-                font-size: 1.1rem;
-            }
+            .unit-selector .hack-label { margin-bottom: 0; }
+            .unit-selector .hack-select { flex-grow: 1; }
         </style>
         <div class="unit-converter-group">
             <span class="hack-label">Value to Convert:</span>
             <input type="number" id="unit-value-input" class="hack-input" placeholder="Enter numerical value (e.g., 100)" value="1" step="any" />
             <div class="unit-selector">
-                <label for="unit-from">FROM:</label>
-                <select id="unit-from"></select>
+                <label for="unit-from" class="hack-label">FROM:</label>
+                <select id="unit-from" class="hack-select"></select>
             </div>
             <div class="unit-selector">
-                <label for="unit-to">TO:</label>
-                <select id="unit-to"></select>
+                <label for="unit-to" class="hack-label">TO:</label>
+                <select id="unit-to" class="hack-select"></select>
             </div>
         </div>
     `;

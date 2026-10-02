@@ -19,14 +19,12 @@ export function base64Decode(str) {
 }
 
 /**
- * Placeholder for SHA-256 Hash generation.
+ * SHA-256 hash using the browser Web Crypto API.
  */
-export function sha256(str) {
-    // Placeholder logic - simulates a 64-character hex hash.
-    return (Math.random().toString(16).slice(2, 10) + Math.random().toString(16).slice(2, 10) +
-            Math.random().toString(16).slice(2, 10) + Math.random().toString(16).slice(2, 10) +
-            Math.random().toString(16).slice(2, 10) + Math.random().toString(16).slice(2, 10) +
-            Math.random().toString(16).slice(2, 10) + Math.random().toString(16).slice(2, 10)).toUpperCase();
+export async function sha256(str) {
+    const data = new TextEncoder().encode(str);
+    const digest = await crypto.subtle.digest('SHA-256', data);
+    return [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, '0')).join('');
 }
 
 
